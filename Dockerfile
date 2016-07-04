@@ -51,29 +51,45 @@ RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5 \
 ################################################################################
 
 # install PHP 7 FPM
-RUN wget https://www.dotdeb.org/dotdeb.gpg \
-   && echo "deb http://packages.dotdeb.org jessie all" >> /etc/apt/sources.list.d/mysql.list \
+RUN echo "deb http://packages.dotdeb.org jessie all" >> /etc/apt/sources.list.d/mysql.list \
+   && echo "deb-src http://packages.dotdeb.org squeeze all" >> /etc/apt/sources.list.d/mysql.list \
+   && wget https://www.dotdeb.org/dotdeb.gpg \
+   && apt-key add dotdeb.gpg \
    && apt-get update \
-   && DEBIAN_FRONTEND=noninteractive apt-get install -y php7.0-fpm \
-   && php7.0-curl \ 
-   && php7.0-mcrypt \
-   && php7.0-xml \
-   && php7.0-xsl \
-   && php7.0-intl \
-   && php7.0-mbstring \
-   && php7.0-zip \
-   && php7.0-gd \
-   && php7.0-mysql
+   && DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes \
+      php7.0-fpm \
+      php7.0-curl \ 
+      php7.0-mcrypt \
+      php7.0-xml \
+      php7.0-xsl \
+      php7.0-intl \
+      php7.0-mbstring \
+      php7.0-zip \
+      php7.0-gd \
+      php7.0-mysql
 
 ################################################################################
 
-# copy the appserver sources
-ADD . /opt/appserver
+# copy the appserver sources and create the directory for the PHP-FPM .pid file
+ADD src / \
+   && mkdir /run/php
 
 ################################################################################
 
 # define working directory
 WORKDIR /var/www/magento
+
+################################################################################
+
+# copy Magento 2 sources
+RUN tar xvfz Magento-CE-2.1.0.tar.gz \
+   && cp -r /root/var/www/magento/* /var/www/magento \
+   && ./composer.phar require appserver-io/webserver
+
+################################################################################
+
+# install Magento 2
+RUN ./composer.phar install
 
 ################################################################################
 
