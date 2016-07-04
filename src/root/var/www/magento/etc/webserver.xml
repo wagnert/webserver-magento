@@ -62,6 +62,17 @@
                 <param name="autoIndexTemplatePath" type="string">resources/templates/www/auto_index.phtml</param>
             </params>
 
+            <!-- rewriteMaps>
+                <rewriteMap type="\AppserverIo\WebServer\Modules\RewriteMap\MagentoRewriteMapper">
+                    <params>
+                        <param name="base" type="string"></param>
+                        <param name="dsn" type="string">mysql:host=127.0.0.1;dbname=magento;charset=utf8</param>
+                        <param name="username" type="string">root</param>
+                        <param name="password" type="string"></param>
+                    </params>
+                </rewriteMap>
+            </rewriteMaps -->
+
             <rewrites>
                 <rewrite condition="^version.+?/(.+)$" target="$1" flag="L"/>
                 <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
