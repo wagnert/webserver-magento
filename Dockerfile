@@ -97,6 +97,11 @@ RUN ./composer.phar install
 
 ################################################################################
 
+# cleanup sources and private files
+RUN rm /root/.composer/auth.json /var/www/magento/Magento-CE-2.1.0.tar.gz
+
+################################################################################
+
 # expose ports
 EXPOSE 80
 
