@@ -70,9 +70,13 @@ RUN echo "deb http://packages.dotdeb.org jessie all" >> /etc/apt/sources.list.d/
 
 ################################################################################
 
-# copy the appserver sources and create the directory for the PHP-FPM .pid file
-ADD src / \
-   && mkdir /run/php
+# copy the appserver sources
+ADD src /
+
+################################################################################
+
+# create the directory for the PHP-FPM .pid file
+RUN mkdir /run/php
 
 ################################################################################
 
