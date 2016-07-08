@@ -1,5 +1,5 @@
 ################################################################################
-# Dockerfile for appserver.io webserver Magento example
+# Dockerfile for appserver.io webserver Magento 2 example
 ################################################################################
 
 # base image
@@ -10,14 +10,24 @@ MAINTAINER Tim Wagner <tw@appserver.io>
 
 ################################################################################
 
+# Magent 2 specific configuration data
+ARG COMPOSER_OAUTH_GITHUB=<YOUR-GITHUB-OAUTH-TOKEN>
+ARG COMPOSER_REPO_USER=<YOUR-USERNAME>
+ARG COMPOSER_REPO_PASSWORD=<YOUR-PASSWORD>
+
 # define versions
-ENV APPSERVER_RUNTIME_BUILD_VERSION 1.1.5-43
+ARG MAGENTO_VERSION=2.1.0
+ARG MAGENTO_PACKAGE=magento/project-community-edition
+ARG MAGENTO_REPOSITORY=https://repo.magento.com/
+ARG APPSERVER_RUNTIME_BUILD_VERSION=1.1.5-43
+
+################################################################################
 
 # update the sources list
 RUN apt-get update \
 
     # install the necessary packages
-    && DEBIAN_FRONTEND=noninteractive apt-get install supervisor wget git -y python-pip \
+    && DEBIAN_FRONTEND=noninteractive apt-get install supervisor wget git curl -y python-pip \
 
     # install the Python package to redirect the supervisord output
     && pip install supervisor-stdout
@@ -52,7 +62,7 @@ RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5 \
 
 # install PHP 7 FPM
 RUN echo "deb http://packages.dotdeb.org jessie all" >> /etc/apt/sources.list.d/mysql.list \
-   && echo "deb-src http://packages.dotdeb.org squeeze all" >> /etc/apt/sources.list.d/mysql.list \
+   && echo "deb-src http://packages.dotdeb.org jessie all" >> /etc/apt/sources.list.d/mysql.list \
    && wget https://www.dotdeb.org/dotdeb.gpg \
    && apt-key add dotdeb.gpg \
    && apt-get update \
@@ -75,8 +85,27 @@ ADD src /
 
 ################################################################################
 
-# create the directory for the PHP-FPM .pid file
-RUN mkdir /run/php
+# create the directory for the PHP-FPM .pid file and the working directory
+RUN mkdir /run/php && mkdir /var/www
+
+################################################################################
+
+# clear apk cache to optimize image filesize
+RUN rm -rf /var/cache/apk/*
+
+################################################################################
+
+# install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+################################################################################
+
+# install Magento 2 sources, configure authentication and override sources
+RUN sed -i 's/{{COMPOSER_REPO_USER}}/'"$COMPOSER_REPO_USER"'/g' /root/.composer/auth.json \
+   && sed -i 's/{{COMPOSER_REPO_PASSWORD}}/'"$COMPOSER_REPO_PASSWORD"'/g' /root/.composer/auth.json \
+   && sed -i 's/{{COMPOSER_OAUTH_GITHUB}}/'"$COMPOSER_OAUTH_GITHUB"'/g' /root/.composer/auth.json \
+   && composer create-project --repository-url=$MAGENTO_REPOSITORY $MAGENTO_PACKAGE=$MAGENTO_VERSION /var/www/magento \
+   && cp -r /root/var/www/magento/* /var/www/magento
 
 ################################################################################
 
@@ -85,20 +114,8 @@ WORKDIR /var/www/magento
 
 ################################################################################
 
-# copy Magento 2 sources
-RUN tar xvfz Magento-CE-2.1.0.tar.gz \
-   && cp -r /root/var/www/magento/* /var/www/magento \
-   && ./composer.phar require appserver-io/webserver
-
-################################################################################
-
-# install Magento 2
-RUN ./composer.phar install
-
-################################################################################
-
-# cleanup sources and private files
-RUN rm /root/.composer/auth.json /var/www/magento/Magento-CE-2.1.0.tar.gz
+# install the appserver.io webserver
+RUN composer require appserver-io/webserver && composer install
 
 ################################################################################
 

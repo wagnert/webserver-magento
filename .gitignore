@@ -2,5 +2,3 @@
 .project
 .buildpath
 instance-src
-src/root/.composer
-src/var/www/magento/Magento-CE-2.1.0.tar.gz
